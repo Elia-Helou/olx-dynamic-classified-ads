@@ -12,7 +12,6 @@ class CategoryField extends Model
         'category_id',
         'external_id',
         'name',
-        'name_ar',
         'field_type',
         'is_required',
         'order',
@@ -43,5 +42,10 @@ class CategoryField extends Model
     public function isSelectType(): bool
     {
         return in_array($this->field_type, ['select', 'radio']);
+    }
+
+    public function hasOptions(): bool
+    {
+        return $this->options()->exists();
     }
 }

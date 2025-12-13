@@ -13,18 +13,17 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('external_id')->unique();
+            $table->integer('olx_id');
+            $table->string('external_id')->unique()->index();
             $table->string('name');
             $table->string('name_ar')->nullable();
             $table->string('slug');
             $table->tinyInteger('level')->default(0);
             $table->unsignedBigInteger('parent_id')->nullable();
+            $table->foreign('parent_id')->references('id')->on('categories')->onDelete('set null');
             $table->string('purpose')->nullable();
             $table->json('roles')->nullable();
             $table->timestamps();
-            $table->foreign('parent_id')->references('id')->on('categories')->onDelete('set null');
-            $table->index('external_id');
-            $table->index('parent_id');
         });
     }
 

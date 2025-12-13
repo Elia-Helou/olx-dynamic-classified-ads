@@ -14,9 +14,7 @@ class AdFieldValue extends Model
         'value',
     ];
 
-    protected $casts = [
-        'value' => 'string',
-    ];
+    protected $casts = [];
 
     public function ad(): BelongsTo
     {
@@ -33,4 +31,12 @@ class AdFieldValue extends Model
         return $this->belongsTo(CategoryFieldOption::class, 'category_field_option_id');
     }
 
+    public function getDisplayValueAttribute(): string
+    {
+        if ($this->option) {
+            return $this->option->option_label;
+        }
+
+        return $this->value ?? '';
+    }
 }

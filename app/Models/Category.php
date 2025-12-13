@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Category extends Model
 {
     protected $fillable = [
+        'olx_id',
         'external_id',
         'name',
         'name_ar',

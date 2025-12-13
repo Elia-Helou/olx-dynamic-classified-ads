@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CategoryFieldOption extends Model
 {
     protected $fillable = [
+        'olx_id',
+        'parent_olx_id',
         'category_field_id',
         'option_value',
         'option_label',
-        'order',
     ];
 
     public function categoryField(): BelongsTo

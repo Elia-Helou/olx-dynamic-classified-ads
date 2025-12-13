@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('category_field_options', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('category_field_id');
+            $table->integer('olx_id')->index();
+            $table->unsignedBigInteger('category_field_id')->index();
+            $table->foreign('category_field_id')->references('id')->on('category_fields')->onDelete('cascade');
             $table->string('option_value');
             $table->string('option_label');
-            $table->integer('order')->default(0);
+            $table->integer('parent_olx_id')->nullable()->index();
             $table->timestamps();
-            $table->foreign('category_field_id')->references('id')->on('category_fields')->onDelete('cascade');
-            $table->index('category_field_id');
+            $table->unique(['olx_id', 'category_field_id']);
         });
     }
 
