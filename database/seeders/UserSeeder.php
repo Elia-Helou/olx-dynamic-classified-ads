@@ -20,7 +20,11 @@ class UserSeeder extends Seeder
         );
 
         $user->tokens()->delete();
-        $user->createToken('api-token')->plainTextToken;
-        Log::info('User seeded successfully');
+        $token = $user->createToken('api-token');
+        $plainTextToken = $token->plainTextToken;
+
+        if ($this->command) {
+            $this->command->info('API Token created: ' . $plainTextToken);
+        }
     }
 }

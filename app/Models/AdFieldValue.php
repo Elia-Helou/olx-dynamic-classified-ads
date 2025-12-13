@@ -30,13 +30,4 @@ class AdFieldValue extends Model
     {
         return $this->belongsTo(CategoryFieldOption::class, 'category_field_option_id');
     }
-
-    public function getDisplayValueAttribute(): string
-    {
-        if ($this->option) {
-            return $this->option->option_label;
-        }
-
-        return $this->value ?? '';
-    }
 }

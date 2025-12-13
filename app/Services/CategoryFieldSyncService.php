@@ -6,12 +6,15 @@ use App\Models\Category;
 use App\Models\CategoryField;
 use App\Models\CategoryFieldOption;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CategoryFieldSyncService
 {
-    public function syncAll(): array
+    private const CACHE_KEY_PREFIX = 'olx_fields_';
+    private const CACHE_TTL = 1440;
+    public function syncAll(bool $forceRefresh = false): array
     {
         $categories = Category::whereNotNull('external_id')->get();
 
@@ -29,7 +32,7 @@ class CategoryFieldSyncService
 
         foreach ($categories as $category) {
             try {
-                $this->syncCategoryFields($category);
+                $this->syncCategoryFields($category, $forceRefresh);
                 $successCount++;
             } catch (Exception $e) {
                 $errorCount++;
@@ -49,10 +52,10 @@ class CategoryFieldSyncService
         ];
     }
 
-    public function syncCategoryFields(Category $category): void
+    public function syncCategoryFields(Category $category, bool $forceRefresh = false): void
     {
         $externalId = $category->external_id;
-        $fields = $this->fetchCategoryFields($externalId, $category->olx_id);
+        $fields = $this->fetchCategoryFields($externalId, $category->olx_id, $forceRefresh);
 
         if (empty($fields)) {
             return;
@@ -80,7 +83,6 @@ class CategoryFieldSyncService
                     'name' => $fieldData['name'] ?? 'Unnamed',
                     'field_type' => $fieldData['valueType'] ?? 'string',
                     'is_required' => $fieldData['isMandatory'] ?? false,
-                    'description' => null,
                     'min_value' => $fieldData['minValue'] ?? null,
                     'max_value' => $fieldData['maxValue'] ?? null,
                 ]
@@ -121,8 +123,17 @@ class CategoryFieldSyncService
         }
     }
 
-    private function fetchCategoryFields(string $externalId, int $olx_id): array
+    private function fetchCategoryFields(string $externalId, int $olx_id, bool $forceRefresh = false): array
     {
+        $cacheKey = self::CACHE_KEY_PREFIX . $externalId;
+
+        if (!$forceRefresh) {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
         $url = sprintf(
             'https://www.olx.com.lb/api/categoryFields?categoryExternalIDs=%s&includeWithoutCategory=true&splitByCategoryIDs=true&flatChoices=true&groupChoicesBySection=true&flat=true',
             urlencode($externalId)
@@ -143,9 +154,23 @@ class CategoryFieldSyncService
 
         if (empty($fields)) {
             Log::debug("No fields found for category olx_id: {$olx_id}, external_id: {$externalId}");
+        } else {
+            Cache::put($cacheKey, $fields, now()->addMinutes(self::CACHE_TTL));
         }
 
         return $fields;
+    }
+
+    public function clearCache(?string $externalId = null): void
+    {
+        if ($externalId) {
+            Cache::forget(self::CACHE_KEY_PREFIX . $externalId);
+        } else {
+            $categories = Category::whereNotNull('external_id')->get();
+            foreach ($categories as $category) {
+                Cache::forget(self::CACHE_KEY_PREFIX . $category->external_id);
+            }
+        }
     }
 }
 

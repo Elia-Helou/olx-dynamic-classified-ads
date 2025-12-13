@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ad extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -36,10 +37,5 @@ class Ad extends Model
     public function fieldValues(): HasMany
     {
         return $this->hasMany(AdFieldValue::class);
-    }
-
-    public function fieldValuesWithFields(): HasMany
-    {
-        return $this->fieldValues()->with('field', 'option');
     }
 }

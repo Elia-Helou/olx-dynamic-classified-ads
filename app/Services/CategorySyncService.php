@@ -3,13 +3,24 @@
 namespace App\Services;
 
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CategorySyncService
 {
-    public function fetchCategories(): array
+    private const CACHE_KEY = 'olx_categories';
+    private const CACHE_TTL = 1440;
+
+    public function fetchCategories(bool $forceRefresh = false): array
     {
+        if (!$forceRefresh) {
+            $cached = Cache::get(self::CACHE_KEY);
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
         $response = Http::timeout(30)
             ->get('https://www.olx.com.lb/api/categories');
 
@@ -17,7 +28,15 @@ class CategorySyncService
             throw new \Exception("Failed to fetch categories: HTTP {$response->status()}");
         }
 
-        return $response->json();
+        $categories = $response->json();
+        Cache::put(self::CACHE_KEY, $categories, now()->addMinutes(self::CACHE_TTL));
+
+        return $categories;
+    }
+
+    public function clearCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
     }
 
     public function syncCategories(array $categories, ?int $parentId = null): int
@@ -53,9 +72,9 @@ class CategorySyncService
         return $syncedCount;
     }
 
-    public function syncAll(): array
+    public function syncAll(bool $forceRefresh = false): array
     {
-        $categories = $this->fetchCategories();
+        $categories = $this->fetchCategories($forceRefresh);
 
         if (empty($categories)) {
             return [

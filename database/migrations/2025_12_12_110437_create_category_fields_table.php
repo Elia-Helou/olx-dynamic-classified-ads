@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('category_fields', function (Blueprint $table) {
@@ -19,8 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('field_type');
             $table->boolean('is_required')->default(false);
-            $table->integer('order')->default(0);
-            $table->text('description')->nullable();
             $table->integer('min_value')->nullable();
             $table->integer('max_value')->nullable();
             $table->timestamps();
@@ -28,11 +23,9 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('category_fields');
     }
 };
+

@@ -7,29 +7,27 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
-            
-            $schedule->command('olx:sync-categories')
+
+            $schedule->command('olx:clear-cache')
+                ->dailyAt('01:55')
+                ->withoutOverlapping()
+                ->onOneServer();
+
+            $schedule->command('olx:sync-categories --force')
                 ->dailyAt('02:00')
                 ->withoutOverlapping()
                 ->onOneServer()
                 ->runInBackground();
-            
-            $schedule->command('olx:sync-category-fields')
+
+            $schedule->command('olx:sync-category-fields --force')
                 ->dailyAt('03:00')
                 ->withoutOverlapping()
                 ->onOneServer()

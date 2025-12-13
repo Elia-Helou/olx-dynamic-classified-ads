@@ -7,26 +7,23 @@ use Illuminate\Console\Command;
 
 class SyncCategoriesCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'olx:sync-categories';
+    protected $signature = 'olx:sync-categories {--force : Force refresh by clearing cache}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Sync categories from OLX API (idempotent)';
 
     public function handle(CategorySyncService $service): int
     {
+        $forceRefresh = $this->option('force');
+        
+        if ($forceRefresh) {
+            $this->info('Clearing cache...');
+            $service->clearCache();
+        }
+
         $this->info('Fetching categories from OLX API...');
 
         try {
-            $result = $service->syncAll();
+            $result = $service->syncAll($forceRefresh);
 
             if ($result['success']) {
                 $this->info($result['message']);
