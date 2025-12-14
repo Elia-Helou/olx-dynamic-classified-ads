@@ -9,6 +9,7 @@ use App\Http\Resources\AdResource;
 use App\Services\AdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdController extends Controller
 {
@@ -18,7 +19,7 @@ class AdController extends Controller
 
     public function store(StoreAdRequest $request): JsonResponse
     {
-        $result = $this->adService->create($request->validated(), $request->user()->id);
+        $result = $this->adService->create($request->validated(), Auth::user());
 
         if (!$result['success']) {
             return $this->error($result['message'], 422);
@@ -30,7 +31,7 @@ class AdController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->get('per_page', 15), 1), 100);
-        $result = $this->adService->getUserAds($request->user()->id, $perPage);
+        $result = $this->adService->getUserAds(Auth::user(), $perPage);
 
         if (!$result['success']) {
             return $this->error($result['message'], 500);

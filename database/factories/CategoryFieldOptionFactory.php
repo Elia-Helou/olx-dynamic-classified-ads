@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\CategoryField;
+use App\Models\CategoryFieldOption;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,7 +16,7 @@ class CategoryFieldOptionFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    protected $model = \App\Models\CategoryFieldOption::class;
+    protected $model = CategoryFieldOption::class;
 
     public function definition(): array
     {

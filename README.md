@@ -7,9 +7,22 @@ Laravel RESTful API for classified ads with dynamic, category-specific fields.
 ```bash
 composer install
 cp .env.example .env
+```
+
+Configure your database credentials in `.env`:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database_name
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+Then run:
+```bash
 php artisan key:generate
 php artisan migrate
-php artisan db:seed
 ```
 
 ## Seeding Data

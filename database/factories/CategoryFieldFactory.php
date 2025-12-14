@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
+use App\Models\CategoryField;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -14,12 +16,12 @@ class CategoryFieldFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    protected $model = \App\Models\CategoryField::class;
+    protected $model = CategoryField::class;
 
     public function definition(): array
     {
         return [
-            'category_id' => \App\Models\Category::factory(),
+            'category_id' => Category::factory(),
             'external_id' => fake()->unique()->word(),
             'name' => fake()->words(2, true),
             'field_type' => fake()->randomElement(['string', 'integer', 'float', 'boolean', 'select', 'radio']),

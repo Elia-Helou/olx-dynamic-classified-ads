@@ -6,7 +6,7 @@ use App\Models\Ad;
 use App\Models\AdFieldValue;
 use App\Models\Category;
 use App\Models\CategoryField;
-use App\Models\CategoryFieldOption;
+use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class AdService
 {
-    public function create(array $data, int $userId): array
+    public function create(array $data, User $user): array
     {
         try {
             DB::beginTransaction();
@@ -27,8 +27,7 @@ class AdService
                 ];
             }
 
-            $ad = Ad::create([
-                'user_id' => $userId,
+            $ad = $user->ads()->create([
                 'category_id' => $data['category_id'],
                 'title' => $data['title'],
                 'description' => $data['description'],
@@ -89,7 +88,7 @@ class AdService
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Failed to create ad: ' . $e->getMessage(), [
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'data' => $data,
                 'exception' => $e,
             ]);
@@ -101,10 +100,10 @@ class AdService
         }
     }
 
-    public function getUserAds(int $userId, int $perPage = 15): array
+    public function getUserAds(User $user, int $perPage = 15): array
     {
         try {
-            $ads = Ad::where('user_id', $userId)
+            $ads = $user->ads()
                 ->with(['category', 'fieldValues.field', 'fieldValues.option'])
                 ->latest()
                 ->paginate($perPage);
@@ -116,7 +115,7 @@ class AdService
             ];
         } catch (Exception $e) {
             Log::error('Failed to retrieve user ads: ' . $e->getMessage(), [
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'exception' => $e,
             ]);
 
@@ -127,6 +126,8 @@ class AdService
         }
     }
 
+    // Public endpoint which means any authenticated user can view any ad.
+    // To restrict to "ad owner" only, we can add: if ($ad->user_id !== Auth::id()) return 403
     public function getAd(int $adId): array
     {
         try {
