@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Category;
 use App\Models\CategoryField;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Validation\Validator;
 
 class StoreAdRequest extends FormRequest
 {
@@ -53,6 +53,7 @@ class StoreAdRequest extends FormRequest
                         break;
                     case 'select':
                     case 'radio':
+                    case 'enum':
                         $options = $field->options()->pluck('option_value')->toArray();
                         if (!empty($options)) {
                             $fieldRules[] = Rule::in($options);
@@ -76,6 +77,106 @@ class StoreAdRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function ($validator) {
+            $categoryId = $this->input('category_id');
+            
+            if (!$categoryId) {
+                return;
+            }
+
+            $categoryFields = CategoryField::where('category_id', $categoryId)
+                ->with('options')
+                ->get()
+                ->keyBy('external_id');
+
+            if ($categoryFields->isEmpty()) {
+                return;
+            }
+
+            $fieldDependencies = $this->buildFieldDependencies($categoryFields);
+
+            foreach ($fieldDependencies as $childFieldId => $parentFieldId) {
+                $parentValue = $this->input($parentFieldId);
+                $childValue = $this->input($childFieldId);
+
+                if ($parentValue === null || $childValue === null) {
+                    continue;
+                }
+
+                if (!isset($categoryFields[$parentFieldId]) || !isset($categoryFields[$childFieldId])) {
+                    continue;
+                }
+
+                $parentField = $categoryFields[$parentFieldId];
+                $childField = $categoryFields[$childFieldId];
+
+                $parentOption = $parentField->options->firstWhere('option_value', $parentValue);
+                $childOption = $childField->options->firstWhere('option_value', $childValue);
+
+                if (!$parentOption || !$childOption) {
+                    continue;
+                }
+
+                if ($childOption->parent_olx_id !== null && $childOption->parent_olx_id != $parentOption->olx_id) {
+                    $validator->errors()->add(
+                        $childFieldId,
+                        "The selected {$childField->name} does not belong to the selected {$parentField->name}."
+                    );
+                }
+            }
+        });
+    }
+
+    private function buildFieldDependencies($categoryFields): array
+    {
+        $dependencies = [];
+
+        foreach ($categoryFields as $childField) {
+            if (!$childField->isSelectType()) {
+                continue;
+            }
+
+            if (!$childField->relationLoaded('options')) {
+                $childField->load('options');
+            }
+
+            $childOptionsWithParent = $childField->options->whereNotNull('parent_olx_id');
+            
+            if ($childOptionsWithParent->isEmpty()) {
+                continue;
+            }
+
+            $parentOlxIds = $childOptionsWithParent->pluck('parent_olx_id')->unique()->values();
+
+            foreach ($categoryFields as $parentField) {
+                if ($parentField->id === $childField->id) {
+                    continue;
+                }
+                
+                if (!$parentField->isSelectType()) {
+                    continue;
+                }
+
+                if (!$parentField->relationLoaded('options')) {
+                    $parentField->load('options');
+                }
+
+                $parentOlxIdsInField = $parentField->options->pluck('olx_id')->unique()->values();
+                
+                $intersection = $parentOlxIds->intersect($parentOlxIdsInField);
+                
+                if ($intersection->isNotEmpty()) {
+                    $dependencies[$childField->external_id] = $parentField->external_id;
+                    break;
+                }
+            }
+        }
+
+        return $dependencies;
     }
 
     public function messages(): array

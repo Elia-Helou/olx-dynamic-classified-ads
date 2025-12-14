@@ -228,7 +228,7 @@ class AdApiTest extends TestCase
             ->assertJsonPath('data.pagination.per_page', 5)
             ->assertJsonPath('data.pagination.total', 20)
             ->assertJsonPath('data.pagination.last_page', 4);
-        
+
         $this->assertCount(5, $response->json('data.data'));
     }
 

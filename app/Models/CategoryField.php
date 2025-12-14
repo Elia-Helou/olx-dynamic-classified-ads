@@ -41,7 +41,7 @@ class CategoryField extends Model
 
     public function isSelectType(): bool
     {
-        return in_array($this->field_type, ['select', 'radio']);
+        return in_array($this->field_type, ['select', 'radio', 'enum']);
     }
 
     public function hasOptions(): bool

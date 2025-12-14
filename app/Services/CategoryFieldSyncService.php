@@ -152,9 +152,7 @@ class CategoryFieldSyncService
         $responseData = $response->json();
         $fields = $responseData[$olx_id] ?? [];
 
-        if (empty($fields)) {
-            Log::debug("No fields found for category olx_id: {$olx_id}, external_id: {$externalId}");
-        } else {
+        if (!empty($fields)) {
             Cache::put($cacheKey, $fields, now()->addMinutes(self::CACHE_TTL));
         }
 
